@@ -1404,7 +1404,7 @@
     ];
     var _mockIdx = 0;
     micBtn.addEventListener('click', function() {
-      if (sessionEnded) return;
+      if (sessionEnded) { window.location.reload(); return; }
       if (isListeningGlobal) {
         micBtn.classList.remove('listening');
         recordingGlow.classList.remove('active');
@@ -1512,7 +1512,7 @@
     }
 
     micBtn.addEventListener('click', () => {
-      if (sessionEnded) return;
+      if (sessionEnded) { window.location.reload(); return; }
       if (isListeningGlobal) {
         // End entire session
         clearSilenceTimer();
