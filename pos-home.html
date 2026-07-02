@@ -1350,12 +1350,22 @@
     'Vui lòng xác nhận thanh toán.':   'xac-nhan-thanh-toan.mp3'
   };
   var _currentAudio = null;
+  var _waitingForAudio = false;
+
+  function _restartListeningAfterAudio() {
+    _waitingForAudio = false;
+    if (isListeningGlobal && !sessionEnded) {
+      setTimeout(function() { startListening(false); }, 300);
+    }
+  }
 
   function playAudio(src) {
     if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
     var a = new Audio(src);
     _currentAudio = a;
-    a.play().catch(function(){});
+    a.onended = function() { _currentAudio = null; _restartListeningAfterAudio(); };
+    a.onerror = function() { _currentAudio = null; _restartListeningAfterAudio(); };
+    a.play().catch(function() { _waitingForAudio = false; });
   }
 
   function showAiResponse(text) {
@@ -1364,7 +1374,14 @@
     aiPanel.classList.add('responding');
     recordingGlow.classList.remove('active');
     micBtn.classList.remove('listening');
-    if (AUDIO_MAP[text]) playAudio(AUDIO_MAP[text]);
+    if (AUDIO_MAP[text]) {
+      playAudio(AUDIO_MAP[text]);
+    } else {
+      _waitingForAudio = false;
+      if (isListeningGlobal && !sessionEnded) {
+        setTimeout(function() { startListening(false); }, 1500);
+      }
+    }
   }
 
   function enterThinkingState() {
@@ -1418,9 +1435,11 @@
       var captured = getCapture();
       baseText = ''; interimText = '';
       if (!captured) return;
-      console.log('[SR] processing:', captured);
+      clearSilenceTimer();
+      if (_recognition) { try { _recognition.abort(); } catch(e){} _recognition = null; }
       micBtn.classList.remove('listening');
       recordingGlow.classList.remove('active');
+      _waitingForAudio = true;
       handleVoiceTrigger(captured);
     }
 
@@ -1464,17 +1483,19 @@
       };
 
       _recognition.onend = () => {
-        if (isListeningGlobal) {
+        setTimeout(function() {
+          if (!isListeningGlobal || sessionEnded || _waitingForAudio) {
+            clearSilenceTimer();
+            return;
+          }
           if (getCapture()) {
             clearSilenceTimer();
             triggerProcess();
           } else {
             clearSilenceTimer();
-            setTimeout(() => startListening(false), 200);
+            startListening(false);
           }
-        } else {
-          clearSilenceTimer();
-        }
+        }, 100);
       };
 
       _recognition.onerror = (e) => {
