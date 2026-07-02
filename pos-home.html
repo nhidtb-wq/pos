@@ -1369,6 +1369,8 @@
   }
 
   var isListeningGlobal = false;
+  var sessionEnded = false;
+  var _recognition = null;
 
   if (!SR) {
     // No SR — simulate scripted flow: one click = one utterance
@@ -1380,6 +1382,7 @@
     ];
     var _mockIdx = 0;
     micBtn.addEventListener('click', function() {
+      if (sessionEnded) return;
       if (isListeningGlobal) {
         micBtn.classList.remove('listening');
         recordingGlow.classList.remove('active');
@@ -1394,7 +1397,6 @@
       }
     });
   } else {
-    let recognition = null;
     let baseText = '';
     let interimText = '';
     let silenceTimer = null;
@@ -1414,29 +1416,30 @@
       console.log('[SR] processing:', captured);
       micBtn.classList.remove('listening');
       recordingGlow.classList.remove('active');
-      // aiPanel keeps current state: 'listening' = sparkles (thinking), 'responding' = bubble stays
       handleVoiceTrigger(captured);
     }
 
     function startListening(fresh) {
-      if (recognition) { try { recognition.abort(); } catch(e){} recognition = null; }
+      if (sessionEnded) return;
+      if (_recognition) { try { _recognition.abort(); } catch(e){} _recognition = null; }
       if (fresh) { baseText = ''; interimText = ''; }
 
-      recognition = new SR();
-      recognition.lang = 'vi-VN';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
+      _recognition = new SR();
+      _recognition.lang = 'vi-VN';
+      _recognition.continuous = true;
+      _recognition.interimResults = true;
+      _recognition.maxAlternatives = 1;
 
-      recognition.onstart = () => {
+      _recognition.onstart = () => {
         isListeningGlobal = true;
         micBtn.classList.add('listening');
         recordingGlow.classList.add('active');
-        aiPanel.classList.remove('responding');
-        aiPanel.classList.add('listening');
+        if (!aiPanel.classList.contains('listening') && !aiPanel.classList.contains('responding')) {
+          aiPanel.classList.add('listening');
+        }
       };
 
-      recognition.onresult = (e) => {
+      _recognition.onresult = (e) => {
         clearSilenceTimer();
         // Show mic is active; keep aiPanel state as-is (don't disrupt responding bubble)
         micBtn.classList.add('listening');
@@ -1451,16 +1454,25 @@
           }
         }
         console.log('[SR] base:', baseText, '| interim:', interimText);
-        silenceTimer = setTimeout(triggerProcess, 3000);
+        var delay = baseText ? 800 : 3000;
+        silenceTimer = setTimeout(triggerProcess, delay);
       };
 
-      recognition.onend = () => {
-        clearSilenceTimer();
-        // Unexpected end → restart, keep accumulated text
-        if (isListeningGlobal) setTimeout(() => startListening(false), 200);
+      _recognition.onend = () => {
+        if (isListeningGlobal) {
+          if (getCapture()) {
+            clearSilenceTimer();
+            triggerProcess();
+          } else {
+            clearSilenceTimer();
+            setTimeout(() => startListening(false), 200);
+          }
+        } else {
+          clearSilenceTimer();
+        }
       };
 
-      recognition.onerror = (e) => {
+      _recognition.onerror = (e) => {
         if (e.error === 'aborted' || e.error === 'no-speech') return;
         clearSilenceTimer();
         isListeningGlobal = false;
@@ -1470,10 +1482,11 @@
         aiPanel.classList.remove('responding');
       };
 
-      recognition.start();
+      _recognition.start();
     }
 
     micBtn.addEventListener('click', () => {
+      if (sessionEnded) return;
       if (isListeningGlobal) {
         // End entire session
         clearSilenceTimer();
@@ -1483,7 +1496,7 @@
         recordingGlow.classList.remove('active');
         aiPanel.classList.remove('listening');
         aiPanel.classList.remove('responding');
-        try { recognition.abort(); } catch(e){}
+        try { _recognition.abort(); } catch(e){}
       } else {
         startListening(true);
       }
@@ -1553,11 +1566,12 @@
     _aiRespTimers.forEach(function(id){ clearTimeout(id); });
     _aiRespTimers = [];
 
-    // Reset AI panel về default, dừng record
+    // Reset AI panel về default, dừng record, end session vĩnh viễn
+    sessionEnded = true;
     isListeningGlobal = false;
-    if (typeof recognition !== 'undefined' && recognition) {
-      try { recognition.abort(); } catch(e){}
-      recognition = null;
+    if (_recognition) {
+      try { _recognition.abort(); } catch(e){}
+      _recognition = null;
     }
     aiPanel.classList.remove('listening', 'responding');
     micBtn.classList.remove('listening');
@@ -1572,6 +1586,7 @@
     t.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
       '<span>Thanh toán thành công</span>';
     document.querySelector('.native-panel').appendChild(t);
+    playAudio('thanh-toan-thanh-cong.mp3');
     sToastTimer = setTimeout(function() { t.remove(); sToastTimer = null; }, 2800);
 
     // Animate doanh thu + đơn hàng
@@ -1607,19 +1622,19 @@
   /* ── Product sheet ── */
   var PROD_ITEMS = [
     { id: 316, name: 'Mì Kokomi tôm chua cay',                sub: 'Gói 65g',               unit: '',     price: 5000,   img: 'kokomi-img.png' },
-    { id: 301, name: 'Wake Up 247 Cà phê hòa tan 3in1',      sub: 'Hộp 20 gói × 17g',    unit: '/hộp', price: 72000,  img: 'https://product.hstatic.net/1000246697/product/65554cc516b31c0da29c880d6294378c_bc6131afee104a4a89cab4debc2d58f3_master.jpg' },
-    { id: 303, name: 'Wake Up Sài Gòn Cà phê hòa tan 3in1',  sub: 'Hộp 28 gói × 17g',    unit: '/hộp', price: 95000,  img: 'https://product.hstatic.net/1000246697/product/8934683007044_9286bf3bff6949d1af119f5287623f23_aa7dd141f76146f2ab7a7fa454c2796c_master.jpg' },
-    { id: 311, name: 'Nước mắm Chin-Su ủ chượp 365 ngày 40N',sub: 'Chai 500ml',            unit: '',     price: 55000,  img: 'https://product.hstatic.net/1000141988/product/nuoc_mam_chin-su_ngon_hao_hang_huong_ca_hoi_500_ml__i0015038__17b4bf3927f74f77af86eaaa33c894a7_master.jpg' },
-    { id: 312, name: 'Nước mắm Chin-Su ủ chượp 365 ngày 40N',sub: 'Chai thủy tinh 720ml',  unit: '',     price: 75000,  img: 'https://product.hstatic.net/1000141988/product/nuoc_mam_chin-su_ca_com_bien_dong_720_ml__i0015037__d910d7c1acea4161a6475f669b961d3f_master.jpg' },
-    { id: 313, name: 'Tương ớt Chin-Su',                      sub: 'Chai 250g',             unit: '',     price: 18000,  img: 'https://product.hstatic.net/1000141988/product/tuong_ot_chinsu_250_gr_33077cd126fa4e16af3c66b86b75430f_master.jpg' },
-    { id: 317, name: 'Tương cà Chin-Su',                      sub: 'Chai 250g',             unit: '',     price: 15000,  img: 'https://product.hstatic.net/1000141988/product/tuong_ca_chinsu_250_gr_a9805dc467514438ba41587bf38d02b3_master.jpg' },
-    { id: 318, name: 'Nước tương tỏi ớt Chin-Su',             sub: 'Chai 330ml',            unit: '',     price: 23000,  img: 'https://product.hstatic.net/1000141988/product/nuoc_tuong_toi_ot_chinsu_330_ml_efc051e3f3624c2ebe1c78797b25f18a_master.jpg' },
-    { id: 319, name: 'Nước tương Chin-Su Nấm Shiitake',       sub: 'Chai 330ml',            unit: '',     price: 21000,  img: 'https://product.hstatic.net/1000141988/product/nuoc_tuong_chinsu_nam_shiitake_330ml__i0015217__a8b71ae7020443aba48e0d63ad7d5bc3_master.png' },
-    { id: 320, name: 'Dầu hào tỏi ớt Chin-Su',               sub: 'Chai 320g',             unit: '',     price: 27000,  img: 'https://product.hstatic.net/1000288770/product/d_u_h_o_t_i__t_chinsu_chai_320g_master.jpg' },
-    { id: 314, name: 'Nước tương Nam Dương đậu nành',         sub: 'Chai 500ml',            unit: '',     price: 22000,  img: 'https://product.hstatic.net/1000288770/product/n__c_t__ng_nam_d__ng_d_m_d_c_chai_500ml_master.jpg' },
-    { id: 315, name: 'Mì Omachi khoai tây xốt bò hầm',       sub: 'Gói 80g',               unit: '',     price: 9000,   img: 'https://product.hstatic.net/1000141988/product/i_an_lien_khoai_tay_sot_bo_ham_omachi_5ce395f188b84efca73c02afbc97ba11_520af945d6ab47ce8e56f424963c9d84_master.jpg' },
-    { id: 341, name: 'Bột giặt NET Extra Power',              sub: 'Túi 800g',              unit: '',     price: 52000,  img: 'https://product.hstatic.net/1000288770/product/bot_giat_net_extra_hoa_thien_nhien_6kg_7ce50f8bc24045cda2e7cb37a694884c_grande.jpg' },
-    { id: 342, name: 'Bột giặt NET trắng sáng',              sub: 'Túi 400g',              unit: '',     price: 29000,  img: 'https://product.hstatic.net/1000288770/product/bot_giat_net_huong_hoa_su_goi_600g_02d1a0611af14dc1a6fb10329548afb5_grande.jpg' },
+    { id: 301, name: 'Wake Up 247 Cà phê hòa tan 3in1',      sub: 'Hộp 20 gói × 17g',    unit: '/hộp', price: 72000,  img: 'wake-up-3in1.jpg' },
+    { id: 303, name: 'Wake Up Sài Gòn Cà phê hòa tan 3in1',  sub: 'Hộp 28 gói × 17g',    unit: '/hộp', price: 95000,  img: 'wake-up-saigon.jpg' },
+    { id: 311, name: 'Nước mắm Chin-Su ủ chượp 365 ngày 40N',sub: 'Chai 500ml',            unit: '',     price: 55000,  img: 'nuoc-mam-chinsu-500.jpg' },
+    { id: 312, name: 'Nước mắm Chin-Su ủ chượp 365 ngày 40N',sub: 'Chai thủy tinh 720ml',  unit: '',     price: 75000,  img: 'nuoc-mam-chinsu-720.jpg' },
+    { id: 313, name: 'Tương ớt Chin-Su',                      sub: 'Chai 250g',             unit: '',     price: 18000,  img: 'tuong-ot-chinsu.jpg' },
+    { id: 317, name: 'Tương cà Chin-Su',                      sub: 'Chai 250g',             unit: '',     price: 15000,  img: 'tuong-ca-chinsu.jpg' },
+    { id: 318, name: 'Nước tương tỏi ớt Chin-Su',             sub: 'Chai 330ml',            unit: '',     price: 23000,  img: 'nuoc-tuong-toi-ot.jpg' },
+    { id: 319, name: 'Nước tương Chin-Su Nấm Shiitake',       sub: 'Chai 330ml',            unit: '',     price: 21000,  img: 'nuoc-tuong-shiitake.png' },
+    { id: 320, name: 'Dầu hào tỏi ớt Chin-Su',               sub: 'Chai 320g',             unit: '',     price: 27000,  img: 'dau-hao-chinsu.jpg' },
+    { id: 314, name: 'Nước tương Nam Dương đậu nành',         sub: 'Chai 500ml',            unit: '',     price: 22000,  img: 'nuoc-tuong-nam-duong.jpg' },
+    { id: 315, name: 'Mì Omachi khoai tây xốt bò hầm',       sub: 'Gói 80g',               unit: '',     price: 9000,   img: 'omachi.jpg' },
+    { id: 341, name: 'Bột giặt NET Extra Power',              sub: 'Túi 800g',              unit: '',     price: 52000,  img: 'bot-giat-net-extra.jpg' },
+    { id: 342, name: 'Bột giặt NET trắng sáng',              sub: 'Túi 400g',              unit: '',     price: 29000,  img: 'bot-giat-net-trang.jpg' },
   ];
 
   var prodSheetHideTimer = null;
