@@ -1,0 +1,9 @@
+{
+  "name": "Winnie POS",
+  "short_name": "Winnie POS",
+  "start_url": "./pos-home.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff"
+}
