@@ -1989,6 +1989,10 @@
     document.getElementById('orderPanel').appendChild(t);
     sToastTimer = setTimeout(function() { t.remove(); sToastTimer = null; }, 2100);
   }
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
 </script>
 </body>
 </html>
