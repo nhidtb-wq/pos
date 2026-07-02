@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -13,7 +13,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      width: 100vw; height: 100vh; overflow: hidden;
+      width: 100vw; height: 100vh; height: 100dvh; overflow: hidden;
       background: #f4f4f5; font-family: 'Inter', sans-serif;
       -webkit-font-smoothing: antialiased;
     }
@@ -1230,7 +1230,7 @@
 <script>
   /* ── Scale to viewport ── */
   function scaleUI() {
-    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1200);
+    const scale = Math.min(document.documentElement.clientWidth / 1920, document.documentElement.clientHeight / 1200);
     const root = document.querySelector('.root');
     root.style.transform = `scale(${scale})`;
     const scaledW = 1920 * scale, scaledH = 1200 * scale;
