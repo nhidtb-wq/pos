@@ -556,9 +556,10 @@
     .ai-response {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; justify-content: flex-end;
-      padding: 56px 56px 148px; gap: 28px;
+      padding: 56px 56px 148px; gap: 56px;
       opacity: 0; pointer-events: none;
       transition: opacity 0.4s ease; z-index: 2;
+      overflow-y: auto;
     }
     .ai-panel.responding .ai-response  { opacity: 1; pointer-events: auto; }
     .ai-panel.responding .ai-sparkles  { opacity: 0; pointer-events: none; }
@@ -572,14 +573,14 @@
       padding: 35px 42px;
     }
     .ai-bubble-text {
-      font-size: 96px; font-weight: 600; color: #27272a;
-      line-height: 1.3; letter-spacing: -2.4px; word-break: break-word;
+      font-size: 84px; font-weight: 600; color: #27272a;
+      line-height: 1.3; letter-spacing: -2.1px; word-break: break-word;
     }
     .ai-bubble-arrow { padding-left: 82px; }
     .ai-bubble-arrow svg { display: block; }
 
     .ai-avatar-wrap {
-      width: 263px; height: 308px;
+      width: 230px; height: 308px;
       overflow: hidden; position: relative; flex-shrink: 0;
     }
     .ai-avatar-wrap img {
