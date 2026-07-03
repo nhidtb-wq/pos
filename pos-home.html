@@ -1334,7 +1334,7 @@
     if (voiceState === 'asking_sugar_price') {
       addSugarToOrder(60000);
       voiceState = 'waiting_payment_confirm';
-      _aiRespTimers.push(setTimeout(function(){ showAiResponse('Tổng đơn là 85.000đ.'); }, 1000));
+      _aiRespTimers.push(setTimeout(function(){ showAiResponse('Tổng đơn là 85.000₫. Bạn có muốn lấy thêm gì không?'); }, 1000));
       return;
     }
 
@@ -1346,7 +1346,7 @@
 
   var AUDIO_MAP = {
     'Đường thốt nốt bao nhiêu 1 ký?': 'hoi-gia.mp3',
-    'Tổng đơn là 85.000đ.':            'bao-tong-don.mp3',
+    'Tổng đơn là 85.000₫. Bạn có muốn lấy thêm gì không?':            'bao-tong-don.mp3',
     'Vui lòng xác nhận thanh toán.':   'xac-nhan-thanh-toan.mp3'
   };
   var _currentAudio = null;
@@ -1478,7 +1478,7 @@
           }
         }
         console.log('[SR] base:', baseText, '| interim:', interimText);
-        var delay = baseText ? 800 : 3000;
+        var delay = 2000;
         silenceTimer = setTimeout(triggerProcess, delay);
       };
 
