@@ -556,7 +556,7 @@
     .ai-response {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column; justify-content: flex-end;
-      padding: 56px 56px 148px; gap: 56px;
+      padding: 56px; gap: 56px;
       opacity: 0; pointer-events: none;
       transition: opacity 0.4s ease; z-index: 2;
       overflow-y: auto;
@@ -567,16 +567,17 @@
     .ai-panel.responding #emptyState   { opacity: 0; }
     .ai-panel.responding .chat-list    { display: none; }
 
-    .ai-bubble-wrap { display: flex; flex-direction: column; width: 828px; }
+    .ai-bubble-wrap { display: flex; flex-direction: column; align-items: flex-start; flex-shrink: 0; width: 828px; padding-right: 56px; }
     .ai-bubble-msg {
       background: #fef2f2; border-radius: 40px;
-      padding: 35px 42px;
+      padding: 35px; width: 100%;
     }
     .ai-bubble-text {
       font-size: 84px; font-weight: 600; color: #27272a;
       line-height: 1.3; letter-spacing: -2.1px; word-break: break-word;
+      width: 720px;
     }
-    .ai-bubble-arrow { padding-left: 82px; }
+    .ai-bubble-arrow { padding: 0 82px; }
     .ai-bubble-arrow svg { display: block; }
 
     .ai-avatar-wrap {
